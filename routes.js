@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 // get the current module's directory path
 const __filename = fileURLToPath(import.meta.url);
 const PATH = dirname(__filename);
-const filePath = path.join(PATH, 'message2.txt');
+const filePath = path.join(PATH, 'formSubmitText.txt');
 
 const requestHandler = (req, res) => {
     //get the url and method from the request
@@ -26,29 +26,39 @@ const requestHandler = (req, res) => {
                 </html>
         `);
         return res.end();
-    }
-
-    if (url === '/message' && method === 'POST') {
+    } else if (url === '/message' && method === 'POST') {
         const formData = [];
+
         //listen to the data event
         req.on('data', (chunk) => {
             formData.push(chunk);
         });
         req.on('end', () => {
             const stringFormData = Buffer.concat(formData).toString();
-            console.log(stringFormData);
             const onlyData = stringFormData.split('=')[1];
-            console.log(onlyData);
-            fs.writeFile(filePath, onlyData, 'utf-8', (err) => {
-                if (err) {
-                    console.log('there is an error', err);
-                }
-                console.log('data stored success');
-                res.statusCode = 302;
+            if (!onlyData) {
+                res.statusCode = 400;
                 res.setHeader('Location', '/');
+                res.write('the submitted data is empty');
                 return res.end();
-            });
+            } else {
+                fs.writeFile(filePath, onlyData, 'utf-8', (err) => {
+                    if (err) {
+                        console.log('there is an error', err);
+                    }
+                    console.log('data stored success');
+                    //redirect the user the / directory
+                    res.statusCode = 302;
+                    res.setHeader('Location', '/');
+                    return res.end();
+                });
+            }
         });
+    } else {
+        res.statusCode = 400;
+        res.setHeader('Location', '/');
+        res.write('route not found please check the url');
+        return res.end();
     }
 };
 

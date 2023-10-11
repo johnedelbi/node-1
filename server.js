@@ -1,5 +1,7 @@
-import dotenv from 'dotenv';
 import http from 'http';
+
+import dotenv from 'dotenv';
+
 import requestHandler from './routes.js';
 
 dotenv.config();
