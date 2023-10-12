@@ -7,12 +7,25 @@ const __filename = fileURLToPath(import.meta.url);
 const PATH = dirname(__filename);
 const filePath = path.join(PATH, 'formSubmitText.txt');
 
+const sendResponse = (resObject) => {
+    resObject.res.setHeader(resObject.headerType, resObject.headerValue);
+    resObject.res.statusCode = resObject.code;
+    if (resObject.writeContent) {
+        resObject.res.write(resObject.writeContent);
+    }
+    return resObject.res.end();
+};
+
 const requestHandler = (req, res) => {
     //get the url and method from the request
     const { url, method } = req;
     if (url === '/') {
-        res.setHeader('Content-Type', 'text/html');
-        res.write(`
+        sendResponse({
+            res: res,
+            code: 200,
+            headerType: 'Content-Type',
+            headerValue: 'text/html',
+            writeContent: `
                 <!DOCTYPE html>
                 <html lang="en">
                 <head>
@@ -23,9 +36,8 @@ const requestHandler = (req, res) => {
                         <button  type="submit">Send to server</button>
                     </form>
                 </body>
-                </html>
-        `);
-        return res.end();
+                </html>`
+        });
     } else if (url === '/message' && method === 'POST') {
         const formData = [];
 
@@ -37,28 +49,36 @@ const requestHandler = (req, res) => {
             const stringFormData = Buffer.concat(formData).toString();
             const onlyData = stringFormData.split('=')[1];
             if (!onlyData) {
-                res.statusCode = 400;
-                res.setHeader('Location', '/');
-                res.write('the submitted data is empty');
-                return res.end();
+                sendResponse({
+                    res: res,
+                    code: 400,
+                    headerType: 'Location',
+                    headerValue: '/',
+                    writeContent: 'the submitted data is empty'
+                });
             } else {
                 fs.writeFile(filePath, onlyData, 'utf-8', (err) => {
                     if (err) {
                         console.log('there is an error', err);
-                    }
-                    console.log('data stored success');
+                    } else console.log('data stored success');
                     //redirect the user the / directory
-                    res.statusCode = 302;
-                    res.setHeader('Location', '/');
-                    return res.end();
+                    sendResponse({
+                        res: res,
+                        code: 302,
+                        headerType: 'Location',
+                        headerValue: '/'
+                    });
                 });
             }
         });
     } else {
-        res.statusCode = 400;
-        res.setHeader('Location', '/');
-        res.write('route not found please check the url');
-        return res.end();
+        sendResponse({
+            res: res,
+            code: 400,
+            headerType: 'Location',
+            headerValue: '/',
+            writeContent: 'route not found please check the url'
+        });
     }
 };
 
